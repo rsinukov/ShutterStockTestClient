@@ -6,11 +6,12 @@ import com.rsinukov.shutterstockclient.bl.storage.SearchRepository
 import com.rsinukov.shutterstockclient.bl.usecases.LoadMoreImagesUseCase
 import com.rsinukov.shutterstockclient.bl.usecases.RefreshImagesUseCase
 import com.rsinukov.shutterstockclient.dagger.IoScheduler
-import com.rsinukov.shutterstockclient.features.templateslist.SearchScope
+import com.rsinukov.shutterstockclient.search.SearchScope
 import com.rsinukov.shutterstockclient.mvi.MVIInteractor
 import io.reactivex.Observable
 import io.reactivex.ObservableTransformer
 import io.reactivex.Scheduler
+import io.reactivex.Single
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
@@ -34,20 +35,30 @@ class SearchInteractor @Inject constructor(
 
     private val loadMoreProcessor: ObservableTransformer<Action.LoadMore, Result> =
         ObservableTransformer { action ->
-            action.flatMapSingle {
-                loadImagesUseCase.execute(it.query, currentPages.getValue(it.query))
-                    .map { Result.HasMoreUpdated(it) }
+            action.switchMap { action ->
+                loadImagesUseCase.execute(action.query, currentPages.getValue(action.query))
+                    .doOnSuccess { currentPages[action.query] = currentPages.getValue(action.query) + 1 }
+                    .map<Result> { Result.HasMoreUpdated(it) }
+                    .toLoadingObservable()
             }
         }
 
     private val refreshProcessor: ObservableTransformer<Action.Refresh, Result> =
         ObservableTransformer { action ->
-            action.flatMapSingle {
+            action.switchMap {
                 currentPages[it.query] = START_PAGE
                 refreshImagesUseCase.execute(it.query)
-                    .map { Result.HasMoreUpdated(it) }
+                    .map<Result> { Result.HasMoreUpdated(it) }
+                    .toLoadingObservable()
             }
         }
+
+    private fun Single<Result>.toLoadingObservable(): Observable<Result> {
+        return this.toObservable()
+            .startWith(Result.LoadingStarted)
+            .onErrorReturn { Result.LoadingError }
+            .concatWith(Observable.just(Result.LoadingFinished))
+    }
 
 
     override fun actionProcessor(): ObservableTransformer<in Action, out Result> = ObservableTransformer { actions ->
