@@ -1,0 +1,67 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
+
+apply from: '../libraries.gradle'
+apply from: '../quality.gradle'
+
+android {
+    compileSdkVersion 27
+    defaultConfig {
+        applicationId "com.rsinukov.shutterstockclient"
+        minSdkVersion 21
+        targetSdkVersion 27
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        vectorDrawables.useSupportLibrary = true
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+kapt {
+    useBuildCache = true
+}
+
+dependencies {
+    kapt libraries.daggerCompiler
+
+    implementation(libraries.koptional) {
+        exclude group: 'org.jetbrains'
+        exclude group: 'org.jetbrains.kotlin'
+    }
+    implementation(libraries.kotlin) {
+        exclude group: 'org.jetbrains'
+    }
+
+    implementation libraries.supportAppCompat
+    implementation libraries.supportConstraintLayout
+    implementation libraries.supportDesign
+    implementation libraries.supportRecyclerView
+
+    implementation libraries.dagger
+    implementation libraries.glide
+    implementation libraries.gson
+    implementation libraries.okhttp3
+    implementation libraries.okhttpInterceptor
+    implementation libraries.retrofit
+    implementation libraries.retrofitGson
+    implementation libraries.retrofitRxJava2
+    implementation libraries.room
+    implementation libraries.rxAndroid2
+    implementation libraries.rxBinding2
+    implementation libraries.rxJava2
+    implementation libraries.timber
+
+    testImplementation libraries.junit
+    testImplementation libraries.assertJ
+    testImplementation libraries.kotlinReflection
+    testImplementation libraries.mockitoInline
+    testImplementation libraries.mockitoKotlin
+}

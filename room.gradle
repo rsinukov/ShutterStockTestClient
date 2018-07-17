@@ -1,0 +1,29 @@
+/**
+ * Common configuration items for Room enabled modules
+ */
+android {
+    defaultConfig {
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = [
+                        "room.schemaLocation": "$projectDir/src/androidTest/schemas".toString(),
+                ]
+            }
+        }
+    }
+
+    sourceSets {
+        androidTest.assets.srcDirs += files("$projectDir/src/androidTest/schemas".toString())
+    }
+}
+
+dependencies {
+    kapt libraries.roomCompiler
+
+    implementation(libraries.room) {
+        exclude group: "com.android.support"
+    }
+    implementation(libraries.roomRxJava2) {
+        exclude group: "io.reactivex.rxjava2"
+    }
+}

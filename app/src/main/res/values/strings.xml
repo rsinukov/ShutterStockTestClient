@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">ShutterStockClient</string>
+    <string name="error_try_again">Something went wrong.\nClick to retry.</string>
+    <string name="search">Search</string>
+</resources>

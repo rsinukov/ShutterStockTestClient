@@ -1,0 +1,14 @@
+.DS_Store
+build
+.idea
+.gradle
+keys.keystore
+app/signing.properties
+*.iml
+local.properties
+.project
+.classpath
+.settings
+.gradletasknamecache
+captures/
+TODO

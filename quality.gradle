@@ -1,0 +1,48 @@
+configurations {
+    detekt
+    ktlint
+}
+
+dependencies {
+    ktlint "com.github.shyiko:ktlint:0.24.0"
+    detekt "io.gitlab.arturbosch.detekt:detekt-cli:1.0.0.RC7-3"
+}
+
+def ktLintOutputDir = "${project.buildDir}/reports/ktlint/"
+def ktLintInputFiles = project.fileTree(dir: "src", include: "**/*.kt")
+
+task ktlint(type: JavaExec, group: "verification") {
+    inputs.files(ktLintInputFiles)
+    outputs.dir(ktLintOutputDir)
+
+    description = "Check Kotlin code style."
+    classpath = configurations.ktlint
+    main = "com.github.shyiko.ktlint.Main"
+    args "src/**/*.kt"
+}
+
+task ktlintFormat(type: JavaExec, group: "formatting") {
+    description = "Fix Kotlin code style deviations."
+    classpath = configurations.ktlint
+    main = "com.github.shyiko.ktlint.Main"
+    args "-F", "src/**/*.kt"
+}
+
+def detektOutputDir = "$buildDir/reports/detekt"
+def detektInputFiles = project.fileTree(dir: "src", include: "**/*.kt")
+
+task detekt(type: JavaExec) {
+    inputs.files(detektInputFiles)
+    outputs.dir(detektOutputDir)
+
+    main = "io.gitlab.arturbosch.detekt.cli.Main"
+    classpath = configurations.detekt
+    def input = "$projectDir"
+    def config = "$projectDir/../detekt.yml"
+    def filters = ".*test.*"
+    def output = detektOutputDir
+    def params = ['-i', input, '-c', config, '-f', filters, '-o', output]
+    args(params)
+}
+
+check.dependsOn 'ktlint', 'detekt', 'lint', 'testDebugUnitTest'
