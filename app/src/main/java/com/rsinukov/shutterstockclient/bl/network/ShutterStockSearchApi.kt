@@ -6,7 +6,7 @@ import retrofit2.http.Query
 
 interface ShutterStockSearchApi {
 
-    @GET("images/search/")
+    @GET("images/search")
     fun search(
         @Query("query") query: String,
         @Query("page") page: Int,

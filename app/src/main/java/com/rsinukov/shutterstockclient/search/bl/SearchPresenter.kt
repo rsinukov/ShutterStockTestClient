@@ -1,8 +1,8 @@
 package com.rsinukov.shutterstockclient.search.bl
 
 import com.rsinukov.shutterstockclient.bl.storage.Image
-import com.rsinukov.shutterstockclient.search.SearchScope
 import com.rsinukov.shutterstockclient.mvi.MVIBasePresenter
+import com.rsinukov.shutterstockclient.search.SearchScope
 import javax.inject.Inject
 
 @SearchScope
@@ -36,7 +36,7 @@ class SearchPresenter @Inject constructor(
         when (result) {
             Result.LoadingError -> prevState.copy(isError = true, isLoading = false)
             Result.LoadingStarted -> prevState.copy(isError = false, isLoading = true)
-            Result.LoadingFinished -> prevState.copy(isError = false, isLoading = false)
+            Result.LoadingFinished -> prevState.copy(isLoading = false)
             Result.LastState -> prevState
             is Result.ImagesLoaded -> prevState.copy(content = result.images.map { it.toViewModel() })
             is Result.HasMoreUpdated -> prevState.copy(hasMore = result.hasMore)

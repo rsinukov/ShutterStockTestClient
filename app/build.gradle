@@ -53,9 +53,9 @@ dependencies {
     implementation libraries.retrofit
     implementation libraries.retrofitGson
     implementation libraries.retrofitRxJava2
-    implementation libraries.room
     implementation libraries.rxAndroid2
     implementation libraries.rxBinding2
+    implementation libraries.rxBinding2AppCompat
     implementation libraries.rxJava2
     implementation libraries.timber
 

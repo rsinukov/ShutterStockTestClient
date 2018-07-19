@@ -8,7 +8,7 @@ import io.reactivex.subjects.BehaviorSubject
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.math.max
+import kotlin.math.min
 
 // TODO move from in memory storage to persistent
 @Singleton
@@ -16,24 +16,25 @@ class SearchRepository @Inject constructor(
     @IoScheduler private val scheduler: Scheduler
 ) {
 
-    private val imagesSubject = BehaviorSubject.createDefault(ConcurrentHashMap<String, List<Image>>())
+    private val imagesSubject = BehaviorSubject
+        .createDefault(ConcurrentHashMap<String, List<Image>>())
+        .toSerialized()
 
     fun observeImages(search: String, limit: Int): Observable<List<Image>> = imagesSubject.hide()
         .observeOn(scheduler)
         .map {
             val images = it[search].orEmpty()
-            images.subList(0, max(images.size, limit))
+            images.subList(0, min(images.size, limit))
         }
-        .distinctUntilChanged()
 
     fun insertImages(search: String, images: List<Image>): Completable = Completable.fromCallable {
-        val currentMap = imagesSubject.value
+        val currentMap = imagesSubject.blockingFirst()
         currentMap[search] = currentMap[search].orEmpty() + images
         this.imagesSubject.onNext(currentMap)
     }
 
     fun clearAndInsertImages(search: String, images: List<Image>): Completable = Completable.fromCallable {
-        val currentMap = imagesSubject.value
+        val currentMap = imagesSubject.blockingFirst()
         currentMap[search] = images
         this.imagesSubject.onNext(currentMap)
     }

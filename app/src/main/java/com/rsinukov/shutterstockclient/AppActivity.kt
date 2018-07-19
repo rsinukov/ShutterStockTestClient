@@ -2,7 +2,7 @@ package com.rsinukov.shutterstockclient
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import com.rsinukov.shutterstockclient.features.templateslist.ui.SearchFragment
+import com.rsinukov.shutterstockclient.search.ui.SearchFragment
 
 class AppActivity : AppCompatActivity() {
 

@@ -51,7 +51,7 @@ class ClientModule {
     @Provides
     fun provideHttpLoggingInterceptor(logger: HttpLoggingInterceptor.Logger): HttpLoggingInterceptor {
         val loggingInterceptor = HttpLoggingInterceptor(logger)
-        loggingInterceptor.level = HttpLoggingInterceptor.Level.BODY
+        loggingInterceptor.level = HttpLoggingInterceptor.Level.BASIC
 
         return loggingInterceptor
     }

@@ -2,13 +2,14 @@ package com.rsinukov.shutterstockclient.search.bl
 
 import com.rsinukov.shutterstockclient.bl.storage.Image
 import com.rsinukov.shutterstockclient.mvi.InitialIntention
+import com.rsinukov.shutterstockclient.mvi.ViewStateWithId
 
 data class SearchState(
     val isLoading: Boolean,
     val isError: Boolean,
     val content: List<ImageViewModel>,
     val hasMore: Boolean
-)
+) : ViewStateWithId()
 
 sealed class Intention {
     object Initial : Intention(), InitialIntention

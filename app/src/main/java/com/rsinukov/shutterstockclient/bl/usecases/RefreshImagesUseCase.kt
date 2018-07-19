@@ -6,6 +6,7 @@ import com.rsinukov.shutterstockclient.bl.network.ShutterStockSearchApi
 import com.rsinukov.shutterstockclient.bl.network.hasMore
 import com.rsinukov.shutterstockclient.bl.storage.SearchRepository
 import io.reactivex.Single
+import java.net.URLEncoder
 import javax.inject.Inject
 
 class RefreshImagesUseCase @Inject constructor(
@@ -20,7 +21,7 @@ class RefreshImagesUseCase @Inject constructor(
     fun execute(query: String): Single<Boolean> {
         return shutterStockSearchApi.search(query, page = START_PAGE, perPage = DEFAULT_PAGE_SIZE)
             .flatMap { response ->
-                searchRepository.clearAndInsertImages(query, response.data.map { it.toEntity() })
+                searchRepository.clearAndInsertImages(URLEncoder.encode(query, "UTF-8"), response.data.map { it.toEntity() })
                     .toSingleDefault(response.hasMore())
             }
     }

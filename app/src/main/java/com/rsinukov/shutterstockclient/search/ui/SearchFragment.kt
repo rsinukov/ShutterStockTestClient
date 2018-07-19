@@ -1,13 +1,16 @@
-package com.rsinukov.shutterstockclient.features.templateslist.ui
+package com.rsinukov.shutterstockclient.search.ui
 
-import android.animation.ArgbEvaluator
 import android.os.Bundle
-import android.support.v4.view.ViewPager
+import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.DefaultItemAnimator
+import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView
+import android.support.v7.widget.SearchView
+import android.support.v7.widget.Toolbar
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewTreeObserver
-import android.widget.Toast
+import com.jakewharton.rxbinding2.support.v7.widget.RxSearchView
 import com.rsinukov.shutterstockclient.BaseFragment
 import com.rsinukov.shutterstockclient.R
 import com.rsinukov.shutterstockclient.dagger.ShutterStockDagger
@@ -21,48 +24,48 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
+import java.util.concurrent.TimeUnit
 
 class SearchFragment : BaseFragment() {
 
-    private val okButton: View by bindView(R.id.templates_list_ok)
-    private val cancelButton: View by bindView(R.id.templates_list_cancel)
-    private val viewPager: ViewPager by bindView(R.id.templates_list_pager)
-    private val contentView: View by bindView(R.id.templates_list_content_group)
-    private val errorView: View by bindView(R.id.templates_list_error)
-    private val loadingView: View by bindView(R.id.templates_list_loading)
+    private companion object {
+        const val LOAD_MORE_TRESHOLD = 10
+        const val QUERY_DEBOUNCE_MS = 400L
+    }
 
-    private val argbEvaluator = ArgbEvaluator()
+    private val recyclerView: RecyclerView by bindView(R.id.fragment_search_recycler)
+    private val searchView: SearchView by bindView(R.id.fragment_search_search_view)
+    private val toolbar: Toolbar by bindView(R.id.fragment_search_toolbar)
 
     private val disposables = CompositeDisposable()
     private val intentionsSubject = PublishSubject.create<Intention>()
 
-    private lateinit var templatesListAdapter: TemplatesListAdapter
+    private lateinit var adapter: SearchAdapter
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    private var hasMoreItems = false
+    private var loadingInProgress = false
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragment_search, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        contentView.visible = false
-        errorView.visible = false
-        loadingView.visible = true
+        // TODO add pull to refresh with Reload Intention on trigger
+        // TODO add loading indicator to search view by using state.loadingInProgress
+
+        (activity as AppCompatActivity).setSupportActionBar(toolbar)
+
+        initRecycler()
 
         val presenter = ShutterStockDagger.getInstance(activity!!)[SearchComponent::class.java].providePresenter()
-
         disposables += CompositeDisposable(
             presenter.states()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { render(it) },
             presenter.processIntentions(intentions())
         )
-
-        initViewPager()
-
-        errorView.setOnClickListener { intentionsSubject.onNext(Intention.Reload) }
-        okButton.setOnClickListener { Toast.makeText(activity, "Go to next screen", Toast.LENGTH_SHORT).show() }
-        cancelButton.setOnClickListener { Toast.makeText(activity, "Go to prev screen", Toast.LENGTH_SHORT).show() }
     }
 
     override fun onDestroyView() {
@@ -75,67 +78,67 @@ class SearchFragment : BaseFragment() {
         super.onScopeFinished()
     }
 
-    private fun initViewPager() {
-        templatesListAdapter = TemplatesListAdapter(
-            activity!!,
-            { templateId, variantId ->
-                intentionsSubject.onNext(Intention.TemplateVariationSelected(templateId, variantId))
-            }
-        )
-        viewPager.adapter = templatesListAdapter
-        viewPager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
-
-            override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
-                val nextPosition = if (positionOffset > 0) position + 1 else position - 1
-                if (nextPosition < 0 || nextPosition >= templatesListAdapter.items.size) return
-
-                val currentTemplate = templatesListAdapter.items[position]
-                val nextTemplate = templatesListAdapter.items[nextPosition]
-
-                viewPager.setBackgroundColor(
-                    argbEvaluator.evaluate(Math.abs(positionOffset), currentTemplate.color, nextTemplate.color) as Int
-                )
-            }
-
-            override fun onPageSelected(position: Int) = Unit
-
-            override fun onPageScrollStateChanged(state: Int) {
-                if (state == ViewPager.SCROLL_STATE_IDLE) {
-                    val templateId = templatesListAdapter.items[viewPager.currentItem].id
-                    intentionsSubject.onNext(Intention.TemplateSelected(templateId))
-                }
-            }
-        })
-
-        val localView = view ?: return
-        localView.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
-            override fun onGlobalLayout() {
-                val horizontalPadding = localView.width / 10
-                viewPager.setPadding(horizontalPadding, viewPager.paddingTop, horizontalPadding, viewPager.right)
-                localView.viewTreeObserver.removeOnGlobalLayoutListener(this)
-            }
-        })
-    }
-
     private fun intentions(): Observable<out Intention> {
         return Observable.merge(
             Observable.just(Intention.Initial),
-            intentionsSubject
+            intentionsSubject,
+            searchViewObservable()
         )
     }
 
     private fun render(state: SearchState) {
         with(state) {
-            loadingView.visible = isLoading
-            errorView.visible = isError
+            hasMoreItems = hasMore
 
-            contentView.visible = !isLoading && !isError
-            if (content.isNotEmpty()) {
-                templatesListAdapter.items = content
-                viewPager.setCurrentItem(selectedTemplateIndex, false)
-                intentionsSubject.onNext(Intention.TemplateSelected(content[selectedTemplateIndex].id))
-                viewPager.setBackgroundColor(content[selectedTemplateIndex].color)
+            recyclerView.visible = true
+            val moreState = when {
+                state.isError -> SearchAdapter.MoreState.Error
+                state.hasMore -> SearchAdapter.MoreState.HasMore
+                else -> SearchAdapter.MoreState.Full
             }
+
+            adapter.setItems(content, moreState)
         }
+
+        if (loadingInProgress) {
+            loadingInProgress = state.isLoading
+        }
+    }
+
+    private fun initRecycler() {
+        recyclerView.visible = false
+        adapter = SearchAdapter(activity!!) {
+            intentionsSubject.onNext(Intention.TryAgain(searchView.query.toString()))
+        }
+        recyclerView.adapter = adapter
+
+        val layoutManager = LinearLayoutManager(activity!!)
+        recyclerView.layoutManager = layoutManager
+        recyclerView.itemAnimator = DefaultItemAnimator()
+
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+
+            override fun onScrollStateChanged(recyclerView: RecyclerView?, newState: Int) {
+                if (newState == RecyclerView.SCROLL_STATE_DRAGGING && searchView.hasFocus()) {
+                    searchView.clearFocus()
+                }
+            }
+
+            override fun onScrolled(recyclerView: RecyclerView?, dx: Int, dy: Int) {
+                if (!hasMoreItems || loadingInProgress) return
+                if (layoutManager.findLastVisibleItemPosition() + LOAD_MORE_TRESHOLD > adapter.itemCount) {
+                    loadingInProgress = true
+                    intentionsSubject.onNext(Intention.LoadMore(searchView.query.toString()))
+                }
+            }
+        })
+    }
+
+    private fun searchViewObservable(): Observable<Intention> {
+        return RxSearchView.queryTextChanges(searchView)
+            .debounce(QUERY_DEBOUNCE_MS, TimeUnit.MILLISECONDS, AndroidSchedulers.mainThread())
+            .map { it.toString() }
+            .distinctUntilChanged()
+            .map { Intention.Load(it) }
     }
 }
