@@ -274,7 +274,6 @@ class SearchIntegrationTest {
         return data
     }
 
-
     private fun mappedImages(count: Int = 2): List<Image> {
         val data = mutableListOf<Image>()
         repeat(count) { id ->

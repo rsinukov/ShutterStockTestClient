@@ -12,4 +12,3 @@ data class Asset(
     val height: Int,
     val url: String
 )
-

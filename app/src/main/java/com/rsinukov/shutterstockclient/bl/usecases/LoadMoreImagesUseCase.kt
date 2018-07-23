@@ -28,4 +28,3 @@ class LoadMoreImagesUseCase @Inject constructor(
         val hasMore: Boolean
     )
 }
-

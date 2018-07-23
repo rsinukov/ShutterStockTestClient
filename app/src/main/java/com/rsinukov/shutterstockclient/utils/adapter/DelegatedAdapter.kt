@@ -30,14 +30,12 @@ abstract class DelegatedAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(
     }
 }
 
-
 interface AdapterDelegate {
 
     fun onCreateViewHolder(parent: ViewGroup): RecyclerView.ViewHolder
 
     fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, items: List<Any>)
 }
-
 
 class TypedAdapterDelegate<in Data>(
     private val creator: (ViewGroup) -> ViewHolder<Data>
@@ -50,7 +48,9 @@ class TypedAdapterDelegate<in Data>(
     @Suppress("UNCHECKED_CAST")
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, items: List<Any>) {
         val data = items[position] as? Data
-            ?: throw IllegalStateException("Incorrect data for position $position. Was ${items[position]}. Check your items list.")
+            ?: throw IllegalStateException(
+                "Incorrect data for position $position. Was ${items[position]}. Check your items list."
+            )
         (holder as ViewHolder<Data>).bind(data)
     }
 }

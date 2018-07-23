@@ -22,7 +22,8 @@ class ShutterStockDagger private constructor() {
     private val components = HashMap<Any, ShutterStockComponent>()
 
     @Inject
-    lateinit var builders: Map<Class<out ShutterStockComponent>, @JvmSuppressWildcards Provider<ShutterStockComponentBuilder<*>>>
+    lateinit var builders:
+        Map<Class<out ShutterStockComponent>, @JvmSuppressWildcards Provider<ShutterStockComponentBuilder<*>>>
 
     fun initialize(application: Application) {
         if (getComponent<AppComponent>(appComponentScope) != null) {

@@ -14,8 +14,6 @@ private const val FIELD_WIDTH = "width"
 private const val FIELD_HEIGHT = "height"
 private const val FIELD_URL = "url"
 private const val FIELD_PREVIEW = "preview"
-private const val FIELD_SMALL_THUMB = "small_thumb"
-private const val FIELD_LARGE_THUMB = "large_thumb"
 
 val PARAM_FIELDS = """
     $FIELD_PAGE,
