@@ -15,23 +15,64 @@ class SearchRepositoryTest {
     }
 
     @Test
-    fun `observeTemplates should return empty list by default`() {
-        searchRepository.observeTemplates().test()
+    fun `observeImages should be empty by default`() {
+        searchRepository.observeImages("test", 100).test()
             .assertValue(emptyList())
             .assertNotTerminated()
     }
 
     @Test
-    fun `when save templates should update value`() {
-        val subscriber = searchRepository.observeTemplates().test()
-        subscriber.assertValue(emptyList())
+    fun `insertImages should add to exisiting`() {
+        val test = searchRepository.observeImages("test", 100).test()
 
-        val templates1 = listOf<Template>(mock())
-        searchRepository.saveTemplates(templates1).blockingAwait()
-        subscriber.assertValues(emptyList(), templates1)
+        val list1 = listOf<Image>(mock(), mock())
+        searchRepository.insertImages("test", list1).blockingAwait()
+        test.assertValues(emptyList(), list1)
 
-        val templates2 = listOf<Template>(mock(), mock())
-        searchRepository.saveTemplates(templates2).blockingAwait()
-        subscriber.assertValues(emptyList(), templates1, templates2)
+        val list2 = listOf<Image>(mock(), mock())
+        searchRepository.insertImages("test", list2).blockingAwait()
+        test.assertValues(emptyList(), list1, list1 + list2)
+    }
+
+    @Test
+    fun `insertImages should save only for provided query`() {
+        val test1 = searchRepository.observeImages("test1", 100).distinctUntilChanged().test()
+        val test2 = searchRepository.observeImages("test2", 100).distinctUntilChanged().test()
+
+        val list1 = listOf<Image>(mock(), mock())
+        val list2 = listOf<Image>(mock(), mock())
+
+        searchRepository.insertImages("test1", list1).blockingAwait()
+        searchRepository.insertImages("test2", list2).blockingAwait()
+
+        test1.assertValues(emptyList(), list1)
+        test2.assertValues(emptyList(), list2)
+    }
+
+    @Test
+    fun `clearAndInsertImages should reset query`() {
+        val test = searchRepository.observeImages("test", 100).distinctUntilChanged().test()
+
+        val list1 = listOf<Image>(mock(), mock())
+        searchRepository.insertImages("test", list1).blockingAwait()
+        test.assertValues(emptyList(), list1)
+
+        val list2 = listOf<Image>(mock(), mock())
+        searchRepository.clearAndInsertImages("test", list2).blockingAwait()
+        test.assertValues(emptyList(), list1, list2)
+    }
+
+    @Test
+    fun `clearAndInsertImages should reset query only for provided query`() {
+        val test1 = searchRepository.observeImages("test1", 100).distinctUntilChanged().test()
+        val test2 = searchRepository.observeImages("test2", 100).distinctUntilChanged().test()
+
+        val list1 = listOf<Image>(mock(), mock())
+        val list2 = listOf<Image>(mock(), mock())
+        searchRepository.clearAndInsertImages("test1", list1).blockingAwait()
+        searchRepository.clearAndInsertImages("test2", list2).blockingAwait()
+
+        test1.assertValues(emptyList(), list1)
+        test2.assertValues(emptyList(), list2)
     }
 }

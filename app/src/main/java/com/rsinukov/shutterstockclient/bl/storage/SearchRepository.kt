@@ -17,25 +17,25 @@ class SearchRepository @Inject constructor(
 ) {
 
     private val imagesSubject = BehaviorSubject
-        .createDefault(ConcurrentHashMap<String, List<Image>>())
+        .createDefault(ConcurrentHashMap<String, LinkedHashSet<Image>>())
         .toSerialized()
 
     fun observeImages(search: String, limit: Int): Observable<List<Image>> = imagesSubject.hide()
         .observeOn(scheduler)
         .map {
             val images = it[search].orEmpty()
-            images.subList(0, min(images.size, limit))
+            images.toList().subList(0, min(images.size, limit))
         }
 
     fun insertImages(search: String, images: List<Image>): Completable = Completable.fromCallable {
         val currentMap = imagesSubject.blockingFirst()
-        currentMap[search] = currentMap[search].orEmpty() + images
+        currentMap[search] = LinkedHashSet(currentMap[search].orEmpty() + images)
         this.imagesSubject.onNext(currentMap)
     }
 
     fun clearAndInsertImages(search: String, images: List<Image>): Completable = Completable.fromCallable {
         val currentMap = imagesSubject.blockingFirst()
-        currentMap[search] = images
+        currentMap[search] = LinkedHashSet(images)
         this.imagesSubject.onNext(currentMap)
     }
 }

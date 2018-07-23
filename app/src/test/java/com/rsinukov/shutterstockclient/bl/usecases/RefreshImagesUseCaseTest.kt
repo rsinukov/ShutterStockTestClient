@@ -4,7 +4,6 @@ import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import com.rsinukov.shutterstockclient.bl.DEFAULT_PAGE_SIZE
-import com.rsinukov.shutterstockclient.bl.network.Asset as NetworkAsset
 import com.rsinukov.shutterstockclient.bl.network.Assets
 import com.rsinukov.shutterstockclient.bl.network.Data
 import com.rsinukov.shutterstockclient.bl.network.PARAM_FIELDS
@@ -20,27 +19,28 @@ import org.junit.Test
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import java.net.URLEncoder
+import com.rsinukov.shutterstockclient.bl.network.Asset as NetworkAsset
 
-class LoadImagesUseCaseTest {
+class RefreshImagesUseCaseTest {
 
     @Mock
     lateinit var shutterStockSearchApi: ShutterStockSearchApi
     @Mock
     lateinit var searchRepository: SearchRepository
 
-    lateinit var loadImagesUseCase: LoadMoreImagesUseCase
+    lateinit var refreshImagesUseCase: RefreshImagesUseCase
 
     @Before
     fun setUp() {
         MockitoAnnotations.initMocks(this)
-        loadImagesUseCase = LoadMoreImagesUseCase(shutterStockSearchApi, searchRepository)
+        refreshImagesUseCase = RefreshImagesUseCase(shutterStockSearchApi, searchRepository)
     }
 
     @Test
     fun `execute should call api with url encoded query`() {
         whenever(shutterStockSearchApi.search(any(), any(), any(), any())).thenReturn(Single.never())
 
-        loadImagesUseCase.execute("test query", 1).test()
+        refreshImagesUseCase.execute("test query").test()
         verify(shutterStockSearchApi).search(
             query = URLEncoder.encode("test query", "UTF-8"),
             page = 1,
@@ -60,13 +60,13 @@ class LoadImagesUseCaseTest {
             )
         ))
 
-        loadImagesUseCase.execute("test query", 1).test()
+        refreshImagesUseCase.execute("test query").test()
 
-        verify(searchRepository).insertImages("test query", mappedImages())
+        verify(searchRepository).clearAndInsertImages("test query", mappedImages())
     }
 
     @Test
-    fun `execute should return images and has more true if total count more then loaded`() {
+    fun `execute should return has more true if total count more then loaded`() {
         whenever(shutterStockSearchApi.search(any(), any(), any(), any())).thenReturn(Single.just(
             SearchResponse(
                 page = 1,
@@ -75,11 +75,11 @@ class LoadImagesUseCaseTest {
                 data = responseData()
             )
         ))
-        whenever(searchRepository.insertImages(any(), any())).thenReturn(Completable.complete())
+        whenever(searchRepository.clearAndInsertImages(any(), any())).thenReturn(Completable.complete())
 
-        val test = loadImagesUseCase.execute("test query", 1).test()
+        val test = refreshImagesUseCase.execute("test query").test()
 
-        test.assertValue(LoadMoreImagesUseCase.Result(mappedImages(), true))
+        test.assertValue(true)
     }
 
     @Test
@@ -92,11 +92,11 @@ class LoadImagesUseCaseTest {
                 data = responseData()
             )
         ))
-        whenever(searchRepository.insertImages(any(), any())).thenReturn(Completable.complete())
+        whenever(searchRepository.clearAndInsertImages(any(), any())).thenReturn(Completable.complete())
 
-        val test = loadImagesUseCase.execute("test query", 1).test()
+        val test = refreshImagesUseCase.execute("test query").test()
 
-        test.assertValue(LoadMoreImagesUseCase.Result(mappedImages(), false))
+        test.assertValue(false)
     }
 
     private fun responseData(): List<Data> {

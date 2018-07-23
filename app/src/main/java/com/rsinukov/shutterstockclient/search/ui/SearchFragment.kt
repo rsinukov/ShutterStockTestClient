@@ -19,7 +19,7 @@ import com.rsinukov.shutterstockclient.search.bl.Intention
 import com.rsinukov.shutterstockclient.search.bl.SearchState
 import com.rsinukov.shutterstockclient.utils.ui.bindView
 import com.rsinukov.shutterstockclient.utils.ui.visible
-import com.veon.common.rx.plusAssign
+import com.rsinukov.shutterstockclient.utils.rx.plusAssign
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable

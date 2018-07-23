@@ -1,4 +1,4 @@
-package com.veon.common.rx
+package com.rsinukov.shutterstockclient.utils.rx
 
 import io.reactivex.observers.DisposableObserver
 import io.reactivex.subjects.Subject

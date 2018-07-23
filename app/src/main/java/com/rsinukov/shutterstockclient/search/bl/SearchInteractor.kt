@@ -52,7 +52,10 @@ class SearchInteractor @Inject constructor(
                                                 .toLoadingObservable()
                                         }
                                 // else no data to show -> show empty list
-                                    else -> Observable.just(Result.ImagesLoaded(emptyList()))
+                                    else -> Observable.just(
+                                        Result.HasMoreUpdated(false),
+                                        Result.ImagesLoaded(emptyList())
+                                    )
                                 }
                             }
                     }

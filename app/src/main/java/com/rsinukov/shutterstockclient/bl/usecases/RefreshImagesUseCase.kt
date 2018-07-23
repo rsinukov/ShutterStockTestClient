@@ -19,9 +19,9 @@ class RefreshImagesUseCase @Inject constructor(
      * @return if has more images to load
      */
     fun execute(query: String): Single<Boolean> {
-        return shutterStockSearchApi.search(query, page = START_PAGE, perPage = DEFAULT_PAGE_SIZE)
+        return shutterStockSearchApi.search(URLEncoder.encode(query, "UTF-8"), page = START_PAGE, perPage = DEFAULT_PAGE_SIZE)
             .flatMap { response ->
-                searchRepository.clearAndInsertImages(URLEncoder.encode(query, "UTF-8"), response.data.map { it.toEntity() })
+                searchRepository.clearAndInsertImages(query, response.data.map { it.toEntity() })
                     .toSingleDefault(response.hasMore())
             }
     }

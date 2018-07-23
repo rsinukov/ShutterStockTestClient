@@ -1,6 +1,6 @@
 package com.rsinukov.shutterstockclient.mvi
 
-import com.veon.common.rx.toDisposableObserver
+import com.rsinukov.shutterstockclient.utils.rx.toDisposableObserver
 import io.reactivex.Observable
 import io.reactivex.ObservableTransformer
 import io.reactivex.disposables.CompositeDisposable
